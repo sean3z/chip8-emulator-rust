@@ -6,9 +6,8 @@ mod system;
 use system::System;
 
 fn main() {
-    let system = System::new();
-    system.init();
-    system.load("pong");
+    let mut system = System::new();
+    system.init("pong");
 
     loop {
         system.cycle();

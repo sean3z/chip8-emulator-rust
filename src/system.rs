@@ -1,8 +1,9 @@
+use display::FONTS;
 use cpu::Cpu;
 
 pub struct System {
-    pub cpu: Cpu,
-    pub memory: [u8; 4096],
+    cpu: Cpu,
+    memory: [u8; 4096],
     // pub keypad: Keypad,
     // pub display: Display
 }
@@ -10,24 +11,21 @@ pub struct System {
 impl System {
     pub fn new() -> System {
         System {
-            cpu: Cpu {
-                pc: 0,
-                stack: [0; 16]
-            },
+            cpu: Cpu::new(),
             memory: [0; 4096]
         }
     }
 
-    pub fn init(&self) {
-        println!("Hello, world!");
-    }
+    pub fn init(&mut self, game: &str) {
+        for i in 0..80 {
+            self.memory[i] = FONTS[i];
+        }
 
-    pub fn load(&self, game: &str) {
         println!("{}", game);
     }
 
-    pub fn cycle(&self) {
-
+    pub fn cycle(&mut self) {
+       self.cpu.process(self.memory);
     }
 
     pub fn draw(&self) {
