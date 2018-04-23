@@ -1,0 +1,6 @@
+[package]
+name = "chip8-emulator-rust"
+version = "0.1.0"
+authors = ["sean"]
+
+[dependencies]
