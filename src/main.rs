@@ -7,7 +7,7 @@ use system::System;
 
 fn main() {
     let mut system = System::new();
-    system.init("pong");
+    system.init("/Users/sean/Downloads/c8games/PONG");
 
     loop {
         system.cycle();
