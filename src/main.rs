@@ -11,7 +11,6 @@ fn main() {
 
     loop {
         system.cycle();
-        system.draw();
 
         break;
     }

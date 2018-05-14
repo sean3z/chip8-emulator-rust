@@ -1,4 +1,5 @@
-
+const WIDTH: usize = 64;
+const HEIGHT: usize = 32;
 
 pub static FONTS: [u8; 80] = [
   0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
@@ -18,3 +19,23 @@ pub static FONTS: [u8; 80] = [
   0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
   0xF0, 0x80, 0xF0, 0x80, 0x80  // F
 ];
+
+pub struct Display {
+  screen: [u8; WIDTH * HEIGHT]
+}
+
+impl Display {
+  pub fn new() -> Display {
+    Display {
+      screen: [0; WIDTH * HEIGHT]
+    }
+  }
+
+  pub fn clear(&mut self) {
+    println!("{}", "clear");
+  }
+
+  pub fn draw(&mut self, x: usize, y: usize) -> bool {
+    true
+  }
+}
