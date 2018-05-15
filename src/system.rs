@@ -12,18 +12,12 @@ pub struct System {
 }
 
 impl System {
-    pub fn new() -> System {
-        System {
-            cpu: Cpu::new(),
-            memory: [0; 4096],
-            keypad: Keypad::new(),
-            display: Display::new(),
-        }
-    }
+    pub fn new(game: &str) -> System {
+        let mut memory = [0; 4096];
+        let cpu = Cpu::new();
 
-    pub fn init(&mut self, game: &str) {
         for i in 0..80 {
-            self.memory[i] = FONTS[i];
+            memory[i] = FONTS[i];
         };
 
         let mut f = File::open(game).expect("Unable to locate ROM");
@@ -31,9 +25,15 @@ impl System {
         f.read_to_end(&mut buffer).expect("Unable to read ROM data");
 
         for i in 0..buffer.len() {
-            self.memory[i + self.cpu.program as usize] = buffer[i];
-            self.cpu.program += 1;
+            memory[i + cpu.program as usize] = buffer[i];
         };
+
+        System {
+            cpu: cpu,
+            memory: memory,
+            keypad: Keypad::new(),
+            display: Display::new(),
+        }
     }
 
     pub fn cycle(&mut self) {

@@ -47,6 +47,7 @@ impl Cpu {
         let op_4 = opcode & 0x000F;
 
         println!("{}, {}, {}, {}", op_1, op_2, op_3, op_4);
+        println!("program counter: {}", self.program);
 
         self.program += 2;
 
@@ -130,7 +131,7 @@ impl Cpu {
                 self.v[0..(x as usize + 1)]
                      .copy_from_slice(&memory[(self.index as usize)..(self.index + x as u16 + 1) as usize]);
             },
-            (_, _, _, _) => println!("{}", "shrug?")
+            (_, _, _, _) => println!("{}", "opcode unimplemented")
         }
 
 
