@@ -1,3 +1,5 @@
+use rand;
+use rand::Rng;
 use display::Display;
 use keypad::Keypad;
 
@@ -31,27 +33,29 @@ impl Cpu {
     }
 
     pub fn process(&mut self, opcode: u16, display: &mut Display, keypad: &mut Keypad, memory: &mut [u8; 4096]) {
+        // break up into nibbles
+        let nibbles = (
+            (opcode & 0xF000) >> 12,
+            (opcode & 0x0F00) >> 8,
+            (opcode & 0x00F0) >> 4,
+            opcode & 0x000F
+        );
+
         // extract various opcode parameters
-        let x = ((opcode & 0x0F00) >> 8) as usize;
-        let y = ((opcode & 0x00F0) >> 4) as usize;
+        let x = nibbles.1 as usize;
+        let y = nibbles.2 as usize;
+        let n = nibbles.3 as usize;
         let vx = self.v[x];
         let vy = self.v[y];
-        let nnn = opcode & 0x0FFF;
+        let nnn = (opcode & 0x0FFF) as u16;
         let kk = (opcode & 0x00FF) as u8;
-        let n = (opcode & 0x000F) as u8;
 
-        // break up into nibbles
-        let op_1 = (opcode & 0xF000) >> 12;
-        let op_2 = (opcode & 0x0F00) >> 8;
-        let op_3 = (opcode & 0x00F0) >> 4;
-        let op_4 = opcode & 0x000F;
-
-        println!("{}, {}, {}, {}", op_1, op_2, op_3, op_4);
+        println!("{:?}", nibbles);
         println!("program counter: {}", self.program);
 
         self.program += 2;
 
-        match (op_1, op_2, op_3, op_4) {
+        match nibbles {
             (0, 0, 0xE, 0) => display.clear(),
             (0, 0, 0xE, 0xE) => {
                 self.stack_pointer = self.stack_pointer - 1;
@@ -98,9 +102,13 @@ impl Cpu {
             (0x9, _, _, _) => self.program += if vx != vy { 2 } else { 0 },
             (0xA, _, _, _) => self.index = nnn,
             (0xB, _, _, _) => self.program = nnn + self.v[0] as u16,
-            (0xC, _, _, _) => self.v[x] = 8 as u8 & kk, // RND
+            (0xC, _, _, _) => {
+                let mut rng = rand::thread_rng();
+                self.v[x] = rng.gen::<u8>() & kk
+            },
             (0xD, _, _, _) => {
-                let collision = display.draw(vx as usize, vy as usize);
+                let collision = display.draw(vx as usize, vy as usize, 
+                    &memory[self.index as usize .. (self.index + n as u16) as usize]);
                 self.v[0xF] = if collision { 1 } else { 0 };
             },
             (0xE, _, 0x9, 0xE) => self.program += if keypad.is_keydown(vx) { 2 } else { 0 },
@@ -129,7 +137,7 @@ impl Cpu {
             },    
             (0xF, _, 0x6, 0x5) =>  {
                 self.v[0..(x as usize + 1)]
-                     .copy_from_slice(&memory[(self.index as usize)..(self.index + x as u16 + 1) as usize]);
+                    .copy_from_slice(&memory[(self.index as usize)..(self.index + x as u16 + 1) as usize]);
             },
             (_, _, _, _) => println!("{}", "opcode unimplemented")
         }

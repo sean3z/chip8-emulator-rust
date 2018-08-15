@@ -1,3 +1,6 @@
+extern crate rand;
+extern crate sdl2;
+
 mod cpu;
 mod keypad;
 mod display;
@@ -10,7 +13,5 @@ fn main() {
 
     loop {
         system.cycle();
-
-        break;
     }
 }

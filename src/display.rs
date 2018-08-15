@@ -1,5 +1,11 @@
-const WIDTH: usize = 64;
-const HEIGHT: usize = 32;
+use sdl2;
+use sdl2::pixels;
+use sdl2::rect::Rect;
+use sdl2::render::Canvas;
+use sdl2::video::Window;
+
+const WIDTH: u32 = 64;
+const HEIGHT: u32 = 32;
 
 pub static FONTS: [u8; 80] = [
   0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
@@ -21,13 +27,32 @@ pub static FONTS: [u8; 80] = [
 ];
 
 pub struct Display {
-  screen: [u8; WIDTH * HEIGHT]
+  canvas: Canvas<Window>,
 }
 
 impl Display {
   pub fn new() -> Display {
+    let sdl_context = sdl2::init().unwrap();
+    let video = sdl_context.video().unwrap();
+    let window = video
+        .window(
+            "rust-sdl2_gfx: draw line & FPSManager",
+            WIDTH,
+            HEIGHT,
+        )
+        .position_centered()
+        .opengl()
+        .build()
+        .unwrap();
+
+    let mut canvas = window.into_canvas().build().unwrap();
+
+    canvas.set_draw_color(pixels::Color::RGB(0, 0, 0));
+    canvas.clear();
+    canvas.present();
+
     Display {
-      screen: [0; WIDTH * HEIGHT]
+      canvas: canvas
     }
   }
 
@@ -35,7 +60,21 @@ impl Display {
     println!("{}", "clear");
   }
 
-  pub fn draw(&mut self, x: usize, y: usize) -> bool {
+  pub fn draw(&mut self, x: usize, y: usize, sprite: &[u8]) -> bool {
+    for j in 0..sprite.len() {
+      let row = sprite[j];
+      for i in 0..8 {
+        let value = row >> (7 - i) & 0x01;
+        if value == 1 {
+          let xi = (x + i) % WIDTH as usize;
+          let yj = (y + j) % WIDTH as usize;
+          let _ = self.canvas.fill_rect(Rect::new(xi as i32, yj as i32, 20, 20));
+        }
+      }
+    };
+
+    self.canvas.present();
+
     true
   }
 }
