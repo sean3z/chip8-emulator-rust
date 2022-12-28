@@ -1,17 +1,37 @@
 extern crate rand;
-extern crate sdl2;
+extern crate sdl;
+extern crate winconsole;
+
+// use std::io;
+use sdl::event::Event;
+
+use cpu::Cpu;
 
 mod cpu;
 mod keypad;
 mod display;
 
-mod system;
-use system::System;
 
 fn main() {
-    let mut system = System::new("/Users/sean/Downloads/c8games/PONG");
+    let mut cpu = Cpu::new();
 
-    loop {
-        system.cycle();
+    cpu.load_game("/home/sean/www/chip8-emulator-rust/roms/pong");
+
+    sdl::init(&[sdl::InitFlag::Video, sdl::InitFlag::Audio, sdl::InitFlag::Timer]);
+
+    'main : loop {
+        'event : loop {
+            match sdl::event::poll_event() {
+                Event::Quit                  => break 'main,
+                Event::None                  => break 'event,
+                Event::Key(key, state, _, _) => cpu.keypad.press(key, state),
+                _                            => {}
+            }
+        }
+
+        cpu.emulate_cycle();
+        cpu.display.draw_screen();
     }
+
+    sdl::quit();
 }

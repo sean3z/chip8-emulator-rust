@@ -1,80 +1,69 @@
-use sdl2;
-use sdl2::pixels;
-use sdl2::rect::Rect;
-use sdl2::render::Canvas;
-use sdl2::video::Window;
-
-const WIDTH: u32 = 64;
-const HEIGHT: u32 = 32;
-
-pub static FONTS: [u8; 80] = [
-  0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
-  0x20, 0x60, 0x20, 0x20, 0x70, // 1
-  0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
-  0xF0, 0x10, 0xF0, 0x10, 0xF0, // 3
-  0x90, 0x90, 0xF0, 0x10, 0x10, // 4
-  0xF0, 0x80, 0xF0, 0x10, 0xF0, // 5
-  0xF0, 0x80, 0xF0, 0x90, 0xF0, // 6
-  0xF0, 0x10, 0x20, 0x40, 0x40, // 7
-  0xF0, 0x90, 0xF0, 0x90, 0xF0, // 8
-  0xF0, 0x90, 0xF0, 0x10, 0xF0, // 9
-  0xF0, 0x90, 0xF0, 0x90, 0x90, // A
-  0xE0, 0x90, 0xE0, 0x90, 0xE0, // B
-  0xF0, 0x80, 0x80, 0x80, 0xF0, // C
-  0xE0, 0x90, 0x90, 0x90, 0xE0, // D
-  0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
-  0xF0, 0x80, 0xF0, 0x80, 0x80  // F
-];
+use sdl::video;
+use sdl::Rect;
 
 pub struct Display {
-  canvas: Canvas<Window>,
+    gfx: [[u8; 64]; 32],
+    draw_flag: bool,
+    screen: video::Surface
 }
 
+const WIDTH: usize = 64;
+const HEIGHT: usize = 32;
+const SCALE: isize = 20;
+
 impl Display {
-  pub fn new() -> Display {
-    let sdl_context = sdl2::init().unwrap();
-    let video = sdl_context.video().unwrap();
-    let window = video
-        .window(
-            "rust-sdl2_gfx: draw line & FPSManager",
-            WIDTH,
-            HEIGHT,
-        )
-        .position_centered()
-        .opengl()
-        .build()
-        .unwrap();
-
-    let mut canvas = window.into_canvas().build().unwrap();
-
-    canvas.set_draw_color(pixels::Color::RGB(0, 0, 0));
-    canvas.clear();
-    canvas.present();
-
-    Display {
-      canvas: canvas
-    }
-  }
-
-  pub fn clear(&mut self) {
-    println!("{}", "clear");
-  }
-
-  pub fn draw(&mut self, x: usize, y: usize, sprite: &[u8]) -> bool {
-    for j in 0..sprite.len() {
-      let row = sprite[j];
-      for i in 0..8 {
-        let value = row >> (7 - i) & 0x01;
-        if value == 1 {
-          let xi = (x + i) % WIDTH as usize;
-          let yj = (y + j) % WIDTH as usize;
-          let _ = self.canvas.fill_rect(Rect::new(xi as i32, yj as i32, 20, 20));
+    pub fn new() -> Display {
+        Display {
+            gfx: [[0; WIDTH]; HEIGHT],
+            draw_flag: true,
+            screen: video::set_video_mode(WIDTH as isize * SCALE, HEIGHT as isize * SCALE, 8,
+                                          &[video::SurfaceFlag::HWSurface],
+                                          &[video::VideoFlag::DoubleBuf]).unwrap()
         }
-      }
-    };
+    }
 
-    self.canvas.present();
+    pub fn clear(&mut self) {
+        self.gfx = [[0; WIDTH]; HEIGHT];
+        self.draw_flag = true;
+    }
 
-    true
-  }
+    pub fn draw(&mut self, x: usize, y: usize, sprite: &[u8]) -> u8 {
+        let mut collision = 0u8;
+        let n = sprite.len() as usize;
+        let mut yj: usize;
+        let mut xi: usize;
+
+        for j in 0..n {
+            for i in 0..8 {
+                yj = (y + j) % HEIGHT;
+                xi = (x + i) % WIDTH;
+
+                if (sprite[j] & (0x80 >> i)) != 0 {
+                    if self.gfx[yj][xi] == 1 { collision = 1 }
+                    self.gfx[yj][xi] ^= 1;
+                }
+            }
+        }
+
+        self.draw_flag = true;
+        collision
+    }
+
+    pub fn draw_screen(&mut self) {
+        if !self.draw_flag { return }
+        let mut pixel: u8;
+        let sc = SCALE as u16;
+        let pt = |p: usize| { (p as i16) * (SCALE as i16) };
+
+        for y in 0..HEIGHT {
+            for x in 0..WIDTH {
+                pixel = if self.gfx[y][x] != 0 { 255 } else { 0 };
+                self.screen.fill_rect(Some(Rect { x: pt(x), y: pt(y), w: sc, h: sc}),
+                video::RGB(pixel, pixel, pixel));
+            }
+        }
+
+        self.screen.flip();
+        self.draw_flag = false;
+    }
 }
